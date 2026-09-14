@@ -67,6 +67,9 @@ repo2readme ./my-project
 
 # See what would be sent to the model (no API calls, no cost)
 repo2readme BurntSushi/ripgrep --dry-run
+
+# No API key: a README built only from extracted facts (structure, import diagram, commands, env vars, license)
+repo2readme pallets/click --no-model
 ```
 
 | Flag | Default | Meaning |
@@ -80,6 +83,7 @@ repo2readme BurntSushi/ripgrep --dry-run
 | `--concurrency` | `8` | Parallel map calls |
 | `--repair-rounds` | `1` | Repair attempts for unverified mentions |
 | `--dry-run` | off | Run extraction and chunk planning only |
+| `--no-model` | off | Facts-only README without API calls |
 
 Cost scales with the code that is read. Use `--dry-run` to see `estimated_map_input_tokens` before running, and lower `--max-chunks` to cap it. The shared repository context is prompt-cached across map calls: the first call runs alone to write the cache, then the rest fan out.
 
@@ -91,13 +95,15 @@ A FastAPI app with a single-page UI: submit a URL, watch per-stage progress, the
 uvicorn repo2readme.web.app:app --reload
 ```
 
-To try the UI without an API key, `python scripts/fake_server.py` runs the real clone and parse pipeline with a fake model on `http://127.0.0.1:8765`.
+Without `ANTHROPIC_API_KEY` the server still works: it produces facts-only READMEs and the page says so. Set the key and restart to enable the model. `python scripts/fake_server.py` runs the UI with a fake model instead, for testing the model path without cost.
 
 The hosted configuration only accepts `github.com` URLs (never local paths), uses tighter limits (20 map chunks, 150 MB checkout, 60 s clone timeout), limits new repositories per client per hour, caps concurrent jobs, and reuses results for the same repository for an hour. Rendered markdown is sanitized with DOMPurify and Mermaid runs with `securityLevel: "strict"`, since repository content reaches the page through the model.
 
 ### Deploy
 
-The `Dockerfile` installs `git`, prefetches common tree-sitter grammars, runs as a non-root user, and serves on `$PORT`. `render.yaml` is a Render blueprint; any container host works.
+The `Dockerfile` installs `git`, prefetches common tree-sitter grammars, runs as a non-root user, and serves on `$PORT`. Any container host works.
+
+On Render: New > Blueprint, connect this repository, and apply `render.yaml` (free plan, facts-only until a key is added). To enable the model, add `ANTHROPIC_API_KEY` under the service's Environment tab.
 
 ```bash
 docker build -t repo2readme .
@@ -106,7 +112,7 @@ docker run -p 8000:8000 -e ANTHROPIC_API_KEY=... repo2readme
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `ANTHROPIC_API_KEY` | required | API key for the model calls |
+| `ANTHROPIC_API_KEY` | unset | API key for the model calls; without it the demo is facts-only |
 | `REPO2README_MODEL` | `claude-opus-5` | Model for the hosted demo |
 | `REPO2README_MAX_CONCURRENT_JOBS` | `2` | Jobs running at once; the rest queue |
 | `REPO2README_RATE_LIMIT_PER_HOUR` | `5` | New repositories per client per hour |
@@ -130,6 +136,7 @@ docker run -p 8000:8000 -e ANTHROPIC_API_KEY=... repo2readme
 | `src/repo2readme/pipeline.py` | Orchestration of both passes |
 | `src/repo2readme/diagram.py` | Mermaid diagram from components and import edges |
 | `src/repo2readme/render.py` | Markdown assembly |
+| `src/repo2readme/facts_only.py` | README from extracted facts alone, used when no model is configured |
 | `src/repo2readme/cli.py` | Command-line interface |
 | `src/repo2readme/web/` | FastAPI app and demo page |
 | `tests/` | Unit tests and an end-to-end test with a fake model that injects hallucinations |

@@ -443,6 +443,7 @@ async def generate_from_prepared(p: Prepared, llm: StructuredLLM, settings: Sett
     )
     report = {
         **plan_summary(p, settings),
+        "mode": "model",
         "map_verification": {k: v for k, v in vars(stats).items()},
         "map_failures": failures,
         **meta,
@@ -455,7 +456,45 @@ async def generate_from_prepared(p: Prepared, llm: StructuredLLM, settings: Sett
     return Result(readme, draft, report)
 
 
-async def generate(target: str, llm: StructuredLLM, settings: Settings, progress: ProgressFn = _noop,
+def generate_without_model(p: Prepared, settings: Settings, progress: ProgressFn = _noop) -> Result:
+    """Facts-only README: no model calls, used when no credentials are configured."""
+    from .facts_only import facts_only_draft
+
+    progress(Progress("synthesize", 0, 1, "building README from extracted facts"))
+    draft, dropped, issues = verify_draft(facts_only_draft(p), p.index)
+    mermaid, edges = build_mermaid(draft.components, p.graph, list(p.facts))
+    readme = render_readme(
+        draft, mermaid, has_edges=bool(edges), license_name=p.repo_facts.license,
+        commit=p.commit, source_url=p.source_url,
+    )
+    report = {
+        **plan_summary(p, settings),
+        "mode": "facts-only",
+        "map_chunks": 0,
+        "files_sent_to_model": 0,
+        "map_verification": vars(MapStats()),
+        "map_failures": [],
+        "reduce_mode": "none (no model)",
+        "repair_rounds": 0,
+        "dropped_from_draft": [vars(d) for d in dropped],
+        "unverified_mentions": [vars(i) for i in issues],
+        "diagram_edges": [{"from": s, "to": d, "import_edges": n} for s, d, n in edges],
+        "usage": {"model": None, "stages": {}, "estimated_cost_usd": 0.0},
+    }
+    progress(Progress("done", 1, 1, "README ready (facts only)"))
+    return Result(readme, draft, report)
+
+
+def has_model_credentials() -> bool:
+    import os
+
+    return bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"))
+
+
+async def generate(target: str, llm: StructuredLLM | None, settings: Settings, progress: ProgressFn = _noop,
                    *, allow_local: bool = True) -> Result:
+    """Full pipeline; with `llm=None`, a facts-only README without model calls."""
     prepared = await asyncio.to_thread(prepare, target, settings, progress, allow_local=allow_local)
+    if llm is None:
+        return generate_without_model(prepared, settings, progress)
     return await generate_from_prepared(prepared, llm, settings, progress)

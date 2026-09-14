@@ -44,6 +44,8 @@
   .bar > span { display: block; height: 100%; background: var(--accent); transition: width .3s; }
   .stage .msg { color: var(--muted); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .error { color: var(--err); margin-top: 14px; }
+  .notice { margin-top: 14px; padding: 10px 14px; border-radius: 8px; font-size: 13px;
+            border: 1px solid var(--line); border-left: 3px solid var(--warn); background: var(--panel); }
   #output { margin-top: 32px; }
   .toolbar { display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 10px; flex-wrap: wrap; }
   .tab { background: transparent; color: var(--muted); border: none; padding: 6px 10px; font-weight: 500; font-size: 14px; border-radius: 6px; }
@@ -81,6 +83,8 @@
     <a data-url="https://github.com/expressjs/express">expressjs/express</a>
   </div>
 
+  <div class="notice" id="mode-notice" hidden>This server has no API key configured, so READMEs are built from extracted facts only: structure, the import diagram, commands, environment variables and license. No model writes the prose.</div>
+
   <section id="status" hidden>
     <ul class="stages" id="stages"></ul>
     <div class="error" id="error" hidden></div>
@@ -95,6 +99,7 @@
       <button class="ghost" id="copy" type="button">Copy markdown</button>
       <button class="ghost" id="download" type="button">Download README.md</button>
     </div>
+    <div class="notice" id="result-notice" hidden>Facts-only README: generated without a model from parsed code and manifests.</div>
     <div class="stats" id="stats"></div>
     <div class="panel readme" id="tab-preview"></div>
     <div class="panel" id="tab-markdown" hidden><pre class="raw" id="raw"></pre></div>
@@ -112,6 +117,7 @@ const $ = (id) => document.getElementById(id);
 const STAGE_NAMES = ["fetch", "walk", "parse", "plan", "map", "reduce_modules", "synthesize", "repair", "done"];
 let pollTimer = null, markdown = "", repoName = "README";
 
+fetch("/healthz").then(r => r.json()).then(h => { $("mode-notice").hidden = h.mode !== "facts-only"; }).catch(() => {});
 document.querySelectorAll(".examples a").forEach(a => a.addEventListener("click", () => { $("url").value = a.dataset.url; }));
 
 $("form").addEventListener("submit", async (e) => {
@@ -180,12 +186,17 @@ async function showResult(job) {
   const r = job.result.report;
   const mv = r.map_verification;
   const cost = r.usage && r.usage.estimated_cost_usd;
-  const stats = [
+  const factsOnly = r.mode === "facts-only";
+  $("result-notice").hidden = !factsOnly;
+  const stats = factsOnly ? [
+    ["files parsed", r.files_read], ["with symbols", r.files_with_symbols],
+    ["import edges", r.internal_import_edges], ["env vars", (job.result.markdown.match(/^\| `[A-Z0-9_]+` \|/gm) || []).length],
+  ] : [
     ["files read", r.files_sent_to_model], ["skeleton only", r.files_skeleton_only],
     ["import edges", r.internal_import_edges], ["facts kept", mv.facts_kept], ["facts dropped", mv.facts_dropped],
     ["unverified mentions", r.unverified_mentions.length],
   ];
-  if (cost != null) stats.push(["model cost", `$${cost.toFixed(2)}`]);
+  if (cost != null && !factsOnly) stats.push(["model cost", `$${cost.toFixed(2)}`]);
   $("stats").replaceChildren(...stats.map(([k, v]) => { const s = document.createElement("span"); s.innerHTML = `<b></b> `; s.firstChild.textContent = v; s.append(k); return s; }));
 
   const html = DOMPurify.sanitize(marked.parse(markdown));
@@ -208,7 +219,9 @@ function renderReport(r) {
   const add = (tag, text) => { const n = document.createElement(tag); n.textContent = text; el.appendChild(n); return n; };
   add("h3", "How this README was built");
   add("p", `Commit ${r.commit ? r.commit.slice(0, 12) : "unknown"} · ${r.map_chunks} map calls · reduce: ${r.reduce_mode} · repair rounds: ${r.repair_rounds}`);
-  add("p", `The model read ${r.files_sent_to_model} files in full. ${r.files_skeleton_only} lower-priority files were represented only by their parsed symbols. ${r.map_verification.facts_dropped} per-file claims and ${r.map_verification.symbols_dropped} symbol references were discarded because the cited source didn't support them.`);
+  if (r.mode === "facts-only") {
+    add("p", `No model was used. ${r.files_read} files were parsed; ${r.internal_import_edges} imports resolved to repository files and drive the diagram. Every section comes from the parser, manifests and import graph.`);
+  } else add("p", `The model read ${r.files_sent_to_model} files in full. ${r.files_skeleton_only} lower-priority files were represented only by their parsed symbols. ${r.map_verification.facts_dropped} per-file claims and ${r.map_verification.symbols_dropped} symbol references were discarded because the cited source didn't support them.`);
   if (r.map_failures.length) add("p", `${r.map_failures.length} chunk(s) failed and were represented by symbols instead.`);
   add("h3", r.unverified_mentions.length ? "Mentions that could not be verified" : "All checked mentions verified");
   if (r.unverified_mentions.length) {

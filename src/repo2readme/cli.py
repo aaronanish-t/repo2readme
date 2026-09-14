@@ -14,7 +14,10 @@ from . import __version__
 from .config import Settings
 from .fetch import FetchError
 from .llm import ClaudeLLM
-from .pipeline import PipelineError, Progress, generate_from_prepared, plan_summary, prepare
+from .pipeline import (
+    PipelineError, Progress, generate_from_prepared, generate_without_model, has_model_credentials, plan_summary,
+    prepare,
+)
 
 
 def _progress(verbose: bool):
@@ -46,6 +49,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--concurrency", type=int, default=d.concurrency)
     ap.add_argument("--repair-rounds", type=int, default=d.repair_rounds)
     ap.add_argument("--dry-run", action="store_true", help="run the deterministic stages only and print the plan")
+    ap.add_argument("--no-model", action="store_true",
+                    help="build a facts-only README (structure, diagram, commands, env vars) without calling the API")
     ap.add_argument("-v", "--verbose", action="store_true")
     ap.add_argument("--version", action="version", version=f"repo2readme {__version__}")
     return ap
@@ -61,14 +66,20 @@ def main(argv: list[str] | None = None) -> int:
         concurrency=args.concurrency, repair_rounds=args.repair_rounds,
     )
     progress = _progress(args.verbose)
+    if not (args.dry_run or args.no_model or has_model_credentials()):
+        print("error: no Anthropic credentials. Set ANTHROPIC_API_KEY, or use --no-model for a facts-only README.",
+              file=sys.stderr)
+        return 3
 
     try:
         prepared = prepare(args.target, settings, progress)
         if args.dry_run:
             print(json.dumps(plan_summary(prepared, settings), indent=2))
             return 0
-        llm = ClaudeLLM(settings.model)
-        result = asyncio.run(generate_from_prepared(prepared, llm, settings, progress))
+        if args.no_model:
+            result = generate_without_model(prepared, settings, progress)
+        else:
+            result = asyncio.run(generate_from_prepared(prepared, ClaudeLLM(settings.model), settings, progress))
     except (FetchError, PipelineError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2

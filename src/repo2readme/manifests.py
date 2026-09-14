@@ -29,6 +29,15 @@ _ENV_PATTERNS = [
 _DOTENV_LINE = re.compile(r"^\s*(?:export\s+)?([A-Z][A-Z0-9_]{1,})\s*=", re.M)
 _MAKE_TARGET = re.compile(r"^([A-Za-z0-9][A-Za-z0-9_.-]*)\s*:(?!=)", re.M)
 _REQ_NAME = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)", re.M)
+# Manifests and env vars under these directories describe samples, not the project itself.
+NON_PRODUCT_DIRS = {"examples", "example", "docs", "doc", "tests", "test", "fixtures", "testdata", "samples",
+                    "sample", "benchmarks", "bench", "demo", "demos", "playground", ".devcontainer"}
+
+
+def is_non_product(path: str) -> bool:
+    return any(part.lower() in NON_PRODUCT_DIRS for part in PurePosixPath(path).parts[:-1])
+
+
 _GO_REQUIRE = re.compile(r"^\s*(?:require\s+)?([a-z0-9.-]+\.[a-z]+/\S+)\s+v", re.M)
 
 
@@ -125,9 +134,11 @@ def extract_repo_facts(files: list[FileRecord], tree: list[str], loc_by_lang: di
         if lock in names:
             facts.package_managers.append(pm)
 
-    for f in files:
+    for f in sorted(files, key=lambda f: (f.path.count("/"), f.path)):  # root manifests first
         name = PurePosixPath(f.path).name
         depth = f.path.count("/")
+        if is_non_product(f.path) and f.role != "ci":
+            continue
         try:
             if name == "package.json" and depth <= 2:
                 data = json.loads(f.text)
@@ -206,7 +217,7 @@ def extract_repo_facts(files: list[FileRecord], tree: list[str], loc_by_lang: di
 
     seen: set[str] = set()
     for f in files:
-        if f.role not in {"source", "config", "manifest"}:
+        if f.role not in {"source", "config", "manifest"} or is_non_product(f.path):
             continue
         name = PurePosixPath(f.path).name
         patterns = [_DOTENV_LINE] if name.startswith(".env") else _ENV_PATTERNS
@@ -216,6 +227,7 @@ def extract_repo_facts(files: list[FileRecord], tree: list[str], loc_by_lang: di
                 if var not in seen:
                     seen.add(var)
                     facts.env_vars.append(EnvVar(var, f.path, f.text.count("\n", 0, m.start()) + 1))
+    facts.project_names = list(dict.fromkeys(facts.project_names))
     facts.make_targets = list(dict.fromkeys(facts.make_targets))
     facts.package_managers = list(dict.fromkeys(facts.package_managers))
     return facts

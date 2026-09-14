@@ -1,16 +1,15 @@
-# One-click deploy on Render: New > Blueprint > point at this repo, then set ANTHROPIC_API_KEY.
+# Render Blueprint: New > Blueprint > connect this repo.
+# Works without an API key (facts-only READMEs). Add ANTHROPIC_API_KEY under Environment to enable the model.
 services:
   - type: web
     name: repo2readme
     runtime: docker
-    plan: starter
+    plan: free
     healthCheckPath: /healthz
     envVars:
-      - key: ANTHROPIC_API_KEY
-        sync: false
       - key: REPO2README_TRUST_PROXY
         value: "1"
       - key: REPO2README_MAX_CONCURRENT_JOBS
-        value: "2"
+        value: "1"
       - key: REPO2README_RATE_LIMIT_PER_HOUR
         value: "5"

@@ -22,7 +22,7 @@ from pydantic import BaseModel
 from ..config import HOSTED
 from ..fetch import FetchError, parse_github_url
 from ..llm import ClaudeLLM, StructuredLLM
-from ..pipeline import PipelineError, Progress, generate
+from ..pipeline import PipelineError, Progress, generate, has_model_credentials
 
 log = logging.getLogger("repo2readme.web")
 
@@ -99,7 +99,12 @@ class JobStore:
                 del self.by_repo[old.repo]
 
 
-def create_app(llm_factory=lambda: ClaudeLLM(SETTINGS.model), settings=SETTINGS) -> FastAPI:
+def _default_llm_factory() -> StructuredLLM | None:
+    # Without credentials the demo still works, producing a facts-only README (no model calls).
+    return ClaudeLLM(SETTINGS.model) if has_model_credentials() else None
+
+
+def create_app(llm_factory=_default_llm_factory, settings=SETTINGS) -> FastAPI:
     app = FastAPI(title="repo2readme", docs_url=None, redoc_url=None)
     store = JobStore()
     app.state.store = store
@@ -112,7 +117,7 @@ def create_app(llm_factory=lambda: ClaudeLLM(SETTINGS.model), settings=SETTINGS)
 
         async with store.sem:
             job.status = "running"
-            llm: StructuredLLM = llm_factory()
+            llm: StructuredLLM | None = llm_factory()
             try:
                 result = await generate(
                     f"https://github.com/{job.repo}", llm, settings, on_progress, allow_local=False
@@ -162,7 +167,8 @@ def create_app(llm_factory=lambda: ClaudeLLM(SETTINGS.model), settings=SETTINGS)
     @app.get("/healthz")
     async def healthz() -> dict:
         running = sum(1 for j in store.jobs.values() if j.status == "running")
-        return {"ok": True, "running": running, "model": settings.model}
+        mode = "model" if llm_factory is not _default_llm_factory or has_model_credentials() else "facts-only"
+        return {"ok": True, "running": running, "mode": mode, "model": settings.model if mode == "model" else None}
 
     @app.get("/")
     async def index() -> FileResponse:
