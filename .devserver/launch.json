@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "demo-fake-llm",
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": ["scripts/fake_server.py"],
+      "port": 8765
+    }
+  ]
+}
