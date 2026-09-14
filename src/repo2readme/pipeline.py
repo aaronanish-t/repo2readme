@@ -462,6 +462,7 @@ def generate_without_model(p: Prepared, settings: Settings, progress: ProgressFn
 
     progress(Progress("synthesize", 0, 1, "building README from extracted facts"))
     draft, dropped, issues = verify_draft(facts_only_draft(p), p.index)
+    progress(Progress("synthesize", 1, 1, "built from extracted facts"))
     mermaid, edges = build_mermaid(draft.components, p.graph, list(p.facts))
     readme = render_readme(
         draft, mermaid, has_edges=bool(edges), license_name=p.repo_facts.license,
