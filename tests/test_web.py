@@ -17,6 +17,9 @@ def test_rejects_non_github_and_local_paths(fake_llm):
     assert client.get("/api/jobs/nope").status_code == 404
     assert client.get("/healthz").json()["ok"] is True
     assert "repo2readme" in client.get("/").text
+    for asset, marker in [("/static/app.js", "renderTimeline"), ("/static/app.css", "--accent")]:
+        r = client.get(asset)
+        assert r.status_code == 200 and marker in r.text
 
 
 def test_job_lifecycle_dedupe_and_rate_limit(monkeypatch, fake_llm):

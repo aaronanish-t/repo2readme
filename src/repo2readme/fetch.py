@@ -75,6 +75,8 @@ def _git(args: list[str], cwd: Path | None, timeout: int) -> str:
     except subprocess.TimeoutExpired as e:
         raise FetchError(f"git {args[0]} timed out after {timeout}s") from e
     if proc.returncode != 0:
+        if args[0] == "clone" and re.search(r"not found|could not read Username|Authentication failed", proc.stderr):
+            raise FetchError("Repository not found. Check the name, and note that private repositories aren't supported.")
         err = proc.stderr.strip().splitlines()
         tail = err[-1] if err else f"exit code {proc.returncode}"
         raise FetchError(f"git {args[0]} failed: {tail}")

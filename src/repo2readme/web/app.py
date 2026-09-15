@@ -17,6 +17,7 @@ from pathlib import Path
 import anthropic
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from ..config import HOSTED
@@ -106,6 +107,7 @@ def _default_llm_factory() -> StructuredLLM | None:
 
 def create_app(llm_factory=_default_llm_factory, settings=SETTINGS) -> FastAPI:
     app = FastAPI(title="repo2readme", docs_url=None, redoc_url=None)
+    app.mount("/static", StaticFiles(directory=STATIC), name="static")
     store = JobStore()
     app.state.store = store
 

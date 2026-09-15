@@ -3,256 +3,212 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>repo2readme</title>
-<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
-<style>
-  :root {
-    --bg: #fbfaf8; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6a66; --line: #e4e1db;
-    --accent: #2f5bd3; --accent-ink: #ffffff; --ok: #1f7a4d; --warn: #a15c00; --err: #b3261e;
-    --code-bg: #f3f1ed;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #151514; --panel: #1d1d1b; --ink: #ecebe7; --muted: #a09e98; --line: #33322f;
-      --accent: #7c9cf5; --accent-ink: #10131c; --ok: #5cc08c; --warn: #e0a043; --err: #f08a82;
-      --code-bg: #262523;
-    }
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink);
-         font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { max-width: 980px; margin: 0 auto; padding: 48px 20px 80px; }
-  h1.brand { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.01em; }
-  .lede { color: var(--muted); margin: 0 0 28px; max-width: 62ch; }
-  form { display: flex; gap: 10px; flex-wrap: wrap; }
-  input[type=url] { flex: 1 1 420px; padding: 11px 14px; font-size: 15px; border-radius: 8px;
-         border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
-  input[type=url]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-  button { padding: 11px 18px; border-radius: 8px; border: 1px solid transparent; font-size: 15px;
-           background: var(--accent); color: var(--accent-ink); cursor: pointer; font-weight: 600; }
-  button:disabled { opacity: .55; cursor: progress; }
-  button.ghost { background: transparent; color: var(--ink); border-color: var(--line); font-weight: 500; padding: 7px 12px; font-size: 13px; }
-  .examples { margin-top: 10px; font-size: 13px; color: var(--muted); }
-  .examples a { color: var(--accent); cursor: pointer; margin-right: 10px; }
-  #status { margin-top: 28px; }
-  .stages { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
-  .stage { display: grid; grid-template-columns: 130px 1fr 90px; gap: 12px; align-items: center; font-size: 13px; }
-  .stage .name { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); }
-  .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
-  .bar > span { display: block; height: 100%; background: var(--accent); transition: width .3s; }
-  .stage .msg { color: var(--muted); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .error { color: var(--err); margin-top: 14px; }
-  .notice { margin-top: 14px; padding: 10px 14px; border-radius: 8px; font-size: 13px;
-            border: 1px solid var(--line); border-left: 3px solid var(--warn); background: var(--panel); }
-  #output { margin-top: 32px; }
-  .toolbar { display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 10px; flex-wrap: wrap; }
-  .tab { background: transparent; color: var(--muted); border: none; padding: 6px 10px; font-weight: 500; font-size: 14px; border-radius: 6px; }
-  .tab[aria-selected=true] { color: var(--ink); background: var(--code-bg); }
-  .spacer { flex: 1; }
-  .stats { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin: 14px 0 0; }
-  .stats b { color: var(--ink); font-variant-numeric: tabular-nums; }
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 28px 32px; margin-top: 16px; overflow-x: auto; }
-  pre.raw { white-space: pre-wrap; word-break: break-word; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 0; }
-  .readme h1 { font-size: 26px; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-top: 0; }
-  .readme h2 { font-size: 20px; border-bottom: 1px solid var(--line); padding-bottom: 6px; margin-top: 30px; }
-  .readme code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
-  .readme pre { background: var(--code-bg); padding: 12px 14px; border-radius: 8px; overflow-x: auto; }
-  .readme pre code { background: none; padding: 0; }
-  .readme table { border-collapse: collapse; display: block; overflow-x: auto; }
-  .readme th, .readme td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
-  .readme blockquote { margin: 0; padding-left: 14px; border-left: 3px solid var(--line); color: var(--muted); }
-  .readme .mermaid { background: var(--panel); text-align: center; margin: 14px 0; }
-  .issues li { font-size: 13px; margin-bottom: 4px; }
-  footer { margin-top: 48px; font-size: 12px; color: var(--muted); }
-</style>
+<title>repo2readme — READMEs grounded in the code</title>
+<meta name="description" content="Point repo2readme at a public GitHub repository and get a README with an architecture diagram, checked against the source.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%233d5afe'/%3E%3Cpath d='M9 10h9M9 16h14M9 22h11' stroke='white' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
+<script>
+  // Apply the saved theme before first paint to avoid a flash.
+  try { const t = localStorage.getItem("r2r-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/app.css">
+<script defer src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script defer src="/static/app.js"></script>
 </head>
 <body>
-<main>
-  <h1 class="brand">repo2readme</h1>
-  <p class="lede">Paste a public GitHub repository. It is cloned and parsed with tree-sitter, read file by file, and summarized into a README with an architecture diagram. Paths, symbols and commands in the result are checked against the source; diagram arrows come from real imports.</p>
 
-  <form id="form">
-    <input id="url" type="url" required placeholder="https://github.com/owner/repo" autocomplete="off" spellcheck="false">
-    <button id="go" type="submit">Generate README</button>
-  </form>
-  <div class="examples">Try:
-    <a data-url="https://github.com/pallets/click">pallets/click</a>
-    <a data-url="https://github.com/spf13/cobra">spf13/cobra</a>
-    <a data-url="https://github.com/expressjs/express">expressjs/express</a>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="/" aria-label="repo2readme home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M6 7h7M6 12h12M6 17h9"/></svg>
+      </span>
+      <span class="brand-name">repo2readme</span>
+    </a>
+    <nav class="nav-links">
+      <a href="/#how" class="nav-link hide-sm">How it works</a>
+      <a href="https://github.com/aaronanish-t/repo2readme" class="nav-link" target="_blank" rel="noopener">
+        <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span class="hide-sm">GitHub</span>
+      </a>
+      <span class="mode-badge" id="mode-badge" hidden></span>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle color theme">
+        <svg class="icon theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="icon theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+      </button>
+    </nav>
   </div>
+</header>
 
-  <div class="notice" id="mode-notice" hidden>This server has no API key configured, so READMEs are built from extracted facts only: structure, the import diagram, commands, environment variables and license. No model writes the prose.</div>
+<main>
+  <!-- ============ LANDING ============ -->
+  <section class="hero" id="hero">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="container hero-inner">
+      <p class="eyebrow"><span class="dot"></span> tree-sitter parsing · map-reduce · source verification</p>
+      <h1 class="hero-title">READMEs grounded<br>in the code.</h1>
+      <p class="hero-sub">Paste a public GitHub repository. repo2readme parses every file, summarizes it in two passes, and checks each path, symbol and command against the source. The architecture diagram is drawn from real imports.</p>
 
-  <section id="status" hidden>
-    <ul class="stages" id="stages"></ul>
-    <div class="error" id="error" hidden></div>
-  </section>
+      <form class="search" id="form" autocomplete="off">
+        <label class="sr-only" for="url">GitHub repository URL</label>
+        <div class="search-field">
+          <svg class="icon search-icon" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 010-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 11-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1h-8a1 1 0 00-1 1v6.708A2.486 2.486 0 014.5 9h8V1.5zM5 12.25v3.25a.25.25 0 00.4.2l1.45-1.087a.25.25 0 01.3 0L8.6 15.7a.25.25 0 00.4-.2v-3.25a.25.25 0 00-.25-.25h-3.5a.25.25 0 00-.25.25z"/></svg>
+          <input id="url" name="url" type="text" inputmode="url" required spellcheck="false"
+                 placeholder="github.com/owner/repo">
+          <kbd class="hide-sm" aria-hidden="true">Enter</kbd>
+        </div>
+        <button class="btn btn-primary btn-lg" id="go" type="submit">
+          <span class="btn-label">Generate README</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </form>
+      <p class="form-error" id="form-error" role="alert" hidden></p>
 
-  <section id="output" hidden>
-    <div class="toolbar" role="tablist">
-      <button class="tab" role="tab" data-tab="preview" aria-selected="true">Preview</button>
-      <button class="tab" role="tab" data-tab="markdown" aria-selected="false">Markdown</button>
-      <button class="tab" role="tab" data-tab="report" aria-selected="false">Grounding report</button>
-      <span class="spacer"></span>
-      <button class="ghost" id="copy" type="button">Copy markdown</button>
-      <button class="ghost" id="download" type="button">Download README.md</button>
+      <div class="examples">
+        <span class="examples-label">Try</span>
+        <button type="button" class="chip" data-repo="pallets/click"><span class="lang-dot" style="--c:#3572A5"></span>pallets/click</button>
+        <button type="button" class="chip" data-repo="spf13/cobra"><span class="lang-dot" style="--c:#00ADD8"></span>spf13/cobra</button>
+        <button type="button" class="chip" data-repo="expressjs/express"><span class="lang-dot" style="--c:#f1e05a"></span>expressjs/express</button>
+        <button type="button" class="chip" data-repo="BurntSushi/ripgrep"><span class="lang-dot" style="--c:#dea584"></span>BurntSushi/ripgrep</button>
+      </div>
+
+      <div class="recent" id="recent" hidden>
+        <span class="examples-label">Recent</span>
+        <div class="recent-list" id="recent-list"></div>
+      </div>
     </div>
-    <div class="notice" id="result-notice" hidden>Facts-only README: generated without a model from parsed code and manifests.</div>
-    <div class="stats" id="stats"></div>
-    <div class="panel readme" id="tab-preview"></div>
-    <div class="panel" id="tab-markdown" hidden><pre class="raw" id="raw"></pre></div>
-    <div class="panel" id="tab-report" hidden></div>
   </section>
 
-  <footer>Source-grounded README generation. Output may still contain mistakes; review before publishing.</footer>
+  <section class="how container" id="how">
+    <div class="section-head">
+      <p class="eyebrow-plain">How it works</p>
+      <h2>Facts first, then the model, then a checker.</h2>
+    </div>
+    <ol class="steps">
+      <li class="step">
+        <span class="step-num">01</span>
+        <h3>Parse</h3>
+        <p>Shallow clone, skip vendored and generated files, and extract every definition and import with tree-sitter. Manifests give scripts, dependencies and env vars.</p>
+      </li>
+      <li class="step">
+        <span class="step-num">02</span>
+        <h3>Map</h3>
+        <p>Files are packed into chunks without truncation. Each file gets a summary where every fact cites the line range it came from.</p>
+      </li>
+      <li class="step">
+        <span class="step-num">03</span>
+        <h3>Reduce</h3>
+        <p>Verified summaries, the module import graph and manifest facts are combined into a README draft, via module summaries for large repos.</p>
+      </li>
+      <li class="step">
+        <span class="step-num">04</span>
+        <h3>Verify</h3>
+        <p>Paths, symbols, commands and flags that don't exist are removed or repaired. Diagram arrows come only from resolved imports.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ============ WORKSPACE ============ -->
+  <section class="workspace container" id="workspace" hidden>
+    <div class="repo-bar">
+      <button class="icon-btn" id="back" type="button" aria-label="Back to start">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="repo-id">
+        <div class="repo-title">
+          <a id="repo-link" target="_blank" rel="noopener"><span id="repo-owner"></span><span class="slash">/</span><strong id="repo-name"></strong></a>
+          <span class="status-pill" id="status-pill"></span>
+        </div>
+        <div class="repo-meta" id="repo-meta"></div>
+      </div>
+      <div class="repo-actions">
+        <button class="btn btn-ghost" id="share" type="button" disabled>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a5 5 0 007.07 0l3-3a5 5 0 00-7.07-7.07l-1 1M14 10a5 5 0 00-7.07 0l-3 3a5 5 0 007.07 7.07l1-1"/></svg>
+          <span class="hide-sm">Share</span>
+        </button>
+        <button class="btn btn-ghost" id="copy" type="button" disabled>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>
+          <span class="hide-sm">Copy</span>
+        </button>
+        <button class="btn btn-primary" id="download" type="button" disabled>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+          <span>README.md</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="ws-grid">
+      <aside class="ws-side">
+        <div class="card">
+          <div class="card-head">
+            <h2 class="card-title">Pipeline</h2>
+            <span class="elapsed" id="elapsed">0:00</span>
+          </div>
+          <ol class="timeline" id="timeline"></ol>
+        </div>
+        <div class="card" id="stats-card" hidden>
+          <div class="card-head"><h2 class="card-title">Grounding</h2></div>
+          <dl class="stat-grid" id="stats"></dl>
+        </div>
+      </aside>
+
+      <div class="ws-main">
+        <div class="notice" id="facts-notice" hidden>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+          <div><strong>Facts-only README.</strong> This server has no API key configured, so the README is built from parsed structure, the import graph, manifests and env vars. No model wrote the prose.</div>
+        </div>
+
+        <div class="card result">
+          <div class="tabs" role="tablist" id="tabs">
+            <button class="tab" role="tab" id="tab-btn-preview" aria-controls="tab-preview" aria-selected="true" data-tab="preview">Preview</button>
+            <button class="tab" role="tab" id="tab-btn-markdown" aria-controls="tab-markdown" aria-selected="false" data-tab="markdown">Markdown</button>
+            <button class="tab" role="tab" id="tab-btn-diagram" aria-controls="tab-diagram" aria-selected="false" data-tab="diagram">Diagram</button>
+            <button class="tab" role="tab" id="tab-btn-report" aria-controls="tab-report" aria-selected="false" data-tab="report">Report <span class="tab-count" id="issue-count" hidden></span></button>
+          </div>
+
+          <div class="tab-panel" id="tab-preview" role="tabpanel" aria-labelledby="tab-btn-preview">
+            <div class="skeleton" id="skeleton">
+              <div class="sk sk-h1"></div><div class="sk sk-line w80"></div><div class="sk sk-line w60"></div>
+              <div class="sk sk-h2"></div><div class="sk sk-block"></div>
+              <div class="sk sk-h2"></div><div class="sk sk-line w90"></div><div class="sk sk-line w70"></div><div class="sk sk-line w40"></div>
+              <p class="skeleton-caption" id="skeleton-caption">Waiting for a worker…</p>
+            </div>
+            <div class="error-state" id="error-state" hidden>
+              <div class="error-icon" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+              </div>
+              <h3>Couldn't generate this README</h3>
+              <p id="error-message"></p>
+              <button class="btn btn-ghost" id="retry" type="button">Try again</button>
+            </div>
+            <article class="markdown-body" id="preview" hidden></article>
+          </div>
+          <div class="tab-panel" id="tab-markdown" role="tabpanel" aria-labelledby="tab-btn-markdown" hidden>
+            <pre class="raw"><code id="raw"></code></pre>
+          </div>
+          <div class="tab-panel" id="tab-diagram" role="tabpanel" aria-labelledby="tab-btn-diagram" hidden>
+            <div id="diagram"></div>
+          </div>
+          <div class="tab-panel" id="tab-report" role="tabpanel" aria-labelledby="tab-btn-report" hidden>
+            <div id="report"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
-<script>
-const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: dark ? "dark" : "neutral" });
+<footer class="footer">
+  <div class="container footer-inner">
+    <span>repo2readme · open source on <a href="https://github.com/aaronanish-t/repo2readme" target="_blank" rel="noopener">GitHub</a></span>
+    <span class="muted">Output is checked against the source but may still contain mistakes. Review before publishing.</span>
+  </div>
+</footer>
 
-const $ = (id) => document.getElementById(id);
-const STAGE_NAMES = ["fetch", "walk", "parse", "plan", "map", "reduce_modules", "synthesize", "repair", "done"];
-let pollTimer = null, markdown = "", repoName = "README";
-
-fetch("/healthz").then(r => r.json()).then(h => { $("mode-notice").hidden = h.mode !== "facts-only"; }).catch(() => {});
-document.querySelectorAll(".examples a").forEach(a => a.addEventListener("click", () => { $("url").value = a.dataset.url; }));
-
-$("form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  clearTimeout(pollTimer);
-  $("go").disabled = true;
-  $("output").hidden = true;
-  $("error").hidden = true;
-  $("stages").innerHTML = "";
-  $("status").hidden = false;
-  try {
-    const res = await fetch("/api/jobs", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ repo_url: $("url").value.trim() }),
-    });
-    const body = await res.json();
-    if (!res.ok) throw new Error(body.detail || `Request failed (${res.status})`);
-    handle(body);
-  } catch (err) { fail(err.message); }
-});
-
-async function poll(id) {
-  try {
-    const res = await fetch(`/api/jobs/${id}`);
-    const body = await res.json();
-    if (!res.ok) throw new Error(body.detail || `Request failed (${res.status})`);
-    handle(body);
-  } catch (err) { fail(err.message); }
-}
-
-function handle(job) {
-  renderStages(job);
-  if (job.status === "done") { $("go").disabled = false; showResult(job); }
-  else if (job.status === "error") fail(job.error || "Generation failed");
-  else pollTimer = setTimeout(() => poll(job.id), 1500);
-}
-
-function renderStages(job) {
-  const list = $("stages");
-  list.replaceChildren();
-  const stages = job.stages.length ? job.stages : [{ stage: "queued", done: 0, total: 1, message: "waiting for a worker" }];
-  stages.sort((a, b) => STAGE_NAMES.indexOf(a.stage) - STAGE_NAMES.indexOf(b.stage));
-  for (const s of stages) {
-    const li = document.createElement("li"); li.className = "stage";
-    const name = document.createElement("span"); name.className = "name"; name.textContent = s.stage;
-    const bar = document.createElement("div"); bar.className = "bar";
-    const fill = document.createElement("span"); fill.style.width = `${s.total ? Math.round(100 * s.done / s.total) : 0}%`;
-    bar.appendChild(fill);
-    const msg = document.createElement("span"); msg.className = "msg";
-    msg.textContent = s.total > 1 ? `${s.done}/${s.total}` : (s.done >= s.total ? "done" : "…");
-    msg.title = s.message || "";
-    li.append(name, bar, msg); list.appendChild(li);
-  }
-}
-
-function fail(message) {
-  clearTimeout(pollTimer);
-  $("go").disabled = false;
-  $("error").textContent = message;
-  $("error").hidden = false;
-}
-
-async function showResult(job) {
-  markdown = job.result.markdown;
-  repoName = job.repo.split("/").pop();
-  const r = job.result.report;
-  const mv = r.map_verification;
-  const cost = r.usage && r.usage.estimated_cost_usd;
-  const factsOnly = r.mode === "facts-only";
-  $("result-notice").hidden = !factsOnly;
-  const stats = factsOnly ? [
-    ["files parsed", r.files_read], ["with symbols", r.files_with_symbols],
-    ["import edges", r.internal_import_edges], ["env vars", (job.result.markdown.match(/^\| `[A-Z0-9_]+` \|/gm) || []).length],
-  ] : [
-    ["files read", r.files_sent_to_model], ["skeleton only", r.files_skeleton_only],
-    ["import edges", r.internal_import_edges], ["facts kept", mv.facts_kept], ["facts dropped", mv.facts_dropped],
-    ["unverified mentions", r.unverified_mentions.length],
-  ];
-  if (cost != null && !factsOnly) stats.push(["model cost", `$${cost.toFixed(2)}`]);
-  $("stats").replaceChildren(...stats.map(([k, v]) => { const s = document.createElement("span"); s.innerHTML = `<b></b> `; s.firstChild.textContent = v; s.append(k); return s; }));
-
-  const html = DOMPurify.sanitize(marked.parse(markdown));
-  const preview = $("tab-preview");
-  preview.innerHTML = html;
-  const blocks = preview.querySelectorAll("pre > code.language-mermaid");
-  blocks.forEach((code) => {
-    const div = document.createElement("div"); div.className = "mermaid"; div.textContent = code.textContent;
-    code.parentElement.replaceWith(div);
-  });
-  $("raw").textContent = markdown;
-  renderReport(r);
-  $("output").hidden = false;
-  selectTab("preview");
-  try { await mermaid.run({ nodes: preview.querySelectorAll(".mermaid") }); } catch (err) { console.warn(err); }
-}
-
-function renderReport(r) {
-  const el = $("tab-report"); el.replaceChildren();
-  const add = (tag, text) => { const n = document.createElement(tag); n.textContent = text; el.appendChild(n); return n; };
-  add("h3", "How this README was built");
-  add("p", `Commit ${r.commit ? r.commit.slice(0, 12) : "unknown"} · ${r.map_chunks} map calls · reduce: ${r.reduce_mode} · repair rounds: ${r.repair_rounds}`);
-  if (r.mode === "facts-only") {
-    add("p", `No model was used. ${r.files_read} files were parsed; ${r.internal_import_edges} imports resolved to repository files and drive the diagram. Every section comes from the parser, manifests and import graph.`);
-  } else add("p", `The model read ${r.files_sent_to_model} files in full. ${r.files_skeleton_only} lower-priority files were represented only by their parsed symbols. ${r.map_verification.facts_dropped} per-file claims and ${r.map_verification.symbols_dropped} symbol references were discarded because the cited source didn't support them.`);
-  if (r.map_failures.length) add("p", `${r.map_failures.length} chunk(s) failed and were represented by symbols instead.`);
-  add("h3", r.unverified_mentions.length ? "Mentions that could not be verified" : "All checked mentions verified");
-  if (r.unverified_mentions.length) {
-    const ul = document.createElement("ul"); ul.className = "issues";
-    for (const i of r.unverified_mentions) { const li = document.createElement("li"); li.textContent = `[${i.field}] ${i.item}: ${i.reason}`; ul.appendChild(li); }
-    el.appendChild(ul);
-  }
-  if (r.map_verification.dropped_examples.length) {
-    add("h3", "Examples of discarded claims");
-    const ul = document.createElement("ul"); ul.className = "issues";
-    for (const d of r.map_verification.dropped_examples) { const li = document.createElement("li"); li.textContent = d; ul.appendChild(li); }
-    el.appendChild(ul);
-  }
-}
-
-function selectTab(name) {
-  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.tab === name)));
-  for (const t of ["preview", "markdown", "report"]) $(`tab-${t}`).hidden = t !== name;
-}
-document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => selectTab(t.dataset.tab)));
-
-$("copy").addEventListener("click", async () => {
-  await navigator.clipboard.writeText(markdown);
-  $("copy").textContent = "Copied"; setTimeout(() => $("copy").textContent = "Copy markdown", 1500);
-});
-$("download").addEventListener("click", () => {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([markdown], { type: "text/markdown" }));
-  a.download = `${repoName}-README.md`; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-});
-</script>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </body>
 </html>
