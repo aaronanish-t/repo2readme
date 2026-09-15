@@ -2,6 +2,15 @@
 
 Point it at a GitHub repository and it writes a README with a Mermaid architecture diagram, grounded in the code rather than guessed from file names.
 
+**Live demo:** https://repo2readme.onrender.com
+
+<a href="https://repo2readme.onrender.com">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/landing-dark.png">
+    <img alt="repo2readme landing page: a GitHub repository input with example repositories" src="docs/landing-light.png">
+  </picture>
+</a>
+
 ```bash
 repo2readme https://github.com/spf13/cobra -o README.md --report report.json
 ```
