@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: tests (python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        run: pip install -e ".[web,dev]"
+
+      - name: Tests
+        run: pytest -q
+
+      - name: Facts-only README for this repo (no API key needed)
+        run: |
+          repo2readme . --no-model -o /tmp/README.generated.md --report /tmp/report.json
+          python - <<'PY'
+          import json, pathlib
+          report = json.loads(pathlib.Path("/tmp/report.json").read_text())
+          readme = pathlib.Path("/tmp/README.generated.md").read_text()
+          assert report["mode"] == "facts-only", report["mode"]
+          assert report["internal_import_edges"] > 0, "no imports resolved"
+          assert not report["unverified_mentions"], report["unverified_mentions"]
+          assert "```mermaid" in readme, "no diagram rendered"
+          print(f"ok: {report['files_read']} files, {report['internal_import_edges']} import edges")
+          PY
+
+  docker:
+    name: docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: docker build -t repo2readme:ci .
+
+      - name: Serve and check health
+        run: |
+          docker run -d --name r2r -p 8000:8000 repo2readme:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/healthz > /tmp/health.json; then break; fi
+            sleep 2
+          done
+          cat /tmp/health.json
+          grep -q '"ok":true' /tmp/health.json
+          curl -fsS http://127.0.0.1:8000/ | grep -q "repo2readme"
+          curl -fsS http://127.0.0.1:8000/static/app.js > /dev/null
+
+      - name: Container logs
+        if: always()
+        run: docker logs r2r || true

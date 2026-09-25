@@ -1,5 +1,7 @@
 # repo2readme
 
+[![CI](https://github.com/aaronanish-t/repo2readme/actions/workflows/ci.yml/badge.svg)](https://github.com/aaronanish-t/repo2readme/actions/workflows/ci.yml)
+
 Point it at a GitHub repository and it writes a README with a Mermaid architecture diagram, grounded in the code rather than guessed from file names.
 
 **Live demo:** https://repo2readme.onrender.com
